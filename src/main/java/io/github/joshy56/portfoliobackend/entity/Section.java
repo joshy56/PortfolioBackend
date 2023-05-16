@@ -24,6 +24,7 @@ public class Section {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID identifier;
     private String title;
+    private Double weight;
     @OneToMany
     private List<Card> cards;
 }

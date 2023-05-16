@@ -18,5 +18,6 @@ import java.util.UUID;
 @Builder
 public class SectionDto {
     private String title;
+    private Double weight;
     private List<UUID> cards;
 }
