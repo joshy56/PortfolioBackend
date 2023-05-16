@@ -10,7 +10,8 @@
 #EXPOSE 8080
 #ENTRYPOINT ["java","-jar","app.jar"]
 FROM amazoncorretto:17-alpine-jdk
-VOLUME /tmp
-EXPOSE 8080 3306
+#VOLUME /tmp
+#EXPOSE 8080 3306
+MAINTAINER joshy56
 ADD target/*.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
