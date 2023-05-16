@@ -45,6 +45,7 @@ public class SectionController {
     public ResponseEntity<Message> create(@RequestBody SectionDto dto) {
         Section section = Section.builder()
                 .title(dto.getTitle())
+                .weight(dto.getWeight())
                 .cards((dto.getCards() == null) ? null : cardRepository.findAllById(dto.getCards()))
                 .build();
         repository.save(section);
@@ -60,6 +61,7 @@ public class SectionController {
                         oldSection -> Section.builder()
                                 .identifier(oldSection.getIdentifier())
                                 .title(dto.getTitle())
+                                .weight(dto.getWeight())
                                 .cards((dto.getCards() == null) ? null : cardRepository.findAllById(dto.getCards()))
                                 .build()
                 )
