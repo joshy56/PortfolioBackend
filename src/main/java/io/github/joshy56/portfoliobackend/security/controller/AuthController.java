@@ -1,13 +1,11 @@
 package io.github.joshy56.portfoliobackend.security.controller;
 
 import io.github.joshy56.portfoliobackend.dto.Message;
-import io.github.joshy56.portfoliobackend.security.Security;
 import io.github.joshy56.portfoliobackend.security.dto.JwtDto;
 import io.github.joshy56.portfoliobackend.security.dto.UserDto;
 import io.github.joshy56.portfoliobackend.security.entity.SimpleUser;
 import io.github.joshy56.portfoliobackend.security.jwt.JwtProvider;
 import io.github.joshy56.portfoliobackend.security.repository.UserRepository;
-import io.github.joshy56.portfoliobackend.security.service.SimpleUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -39,9 +36,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserDto dto, BindingResult result) {
-        if(result.hasErrors())
+        if (result.hasErrors())
             return new ResponseEntity<>(new Message("Malformed fields"), HttpStatus.BAD_REQUEST);
-        if(userRepository.existsByUsername(dto.getUsername()))
+        if (userRepository.existsByUsername(dto.getUsername()))
             return new ResponseEntity<>(new Message("User with its name already exists"), HttpStatus.CONFLICT);
         SimpleUser user = new SimpleUser(dto.getUsername(), passwordEncoder.encode(dto.getPassword()));
         userRepository.save(user);
@@ -50,13 +47,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtDto> login(@RequestBody UserDto dto, BindingResult result) {
-        if(result.hasErrors())
+        if (result.hasErrors())
             return new ResponseEntity(new Message("Malformed fields"), HttpStatus.BAD_REQUEST);
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(auth);
         String token = provider.generateToken(auth);
-        UserDetails user = (UserDetails) auth.getPrincipal();
-        JwtDto jwtDto = new JwtDto(token, user.getUsername());
+        JwtDto jwtDto = new JwtDto(token);
         return new ResponseEntity<>(jwtDto, HttpStatus.OK);
     }
 }

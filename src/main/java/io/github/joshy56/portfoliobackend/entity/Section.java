@@ -25,6 +25,6 @@ public class Section {
     private UUID identifier;
     private String title;
     @JsonIgnore
-    @OneToMany
+    @OneToMany()
     private List<Card> cards;
 }

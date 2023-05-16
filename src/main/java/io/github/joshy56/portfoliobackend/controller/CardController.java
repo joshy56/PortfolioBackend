@@ -15,6 +15,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,23 +50,25 @@ public class CardController {
 
     @PostMapping("/create")
     public ResponseEntity<Message> create(@RequestBody CardDto dto) {
-        if(dto.getSectionId() != null && !sectionRepository.existsById(dto.getSectionId()))
-            return new ResponseEntity<>(new Message("Section with it id not found!"), HttpStatus.BAD_REQUEST);
-        Card card = Card.builder()
-                .avatarHeaderImage(dto.getAvatarHeaderImage())
-                .knowledgeOnTech(dto.getKnowledgeOnTech())
+        Card.CardBuilder builder = Card.builder();
+        if(dto.getSectionId() != null && sectionRepository.existsById(dto.getSectionId()))
+            builder.section(sectionRepository.findById(dto.getSectionId()).get());
+        builder.avatarHeaderImage(dto.getAvatarHeaderImage())
                 .headerTitle(dto.getHeaderTitle())
                 .headerSubtitle(dto.getHeaderSubtitle())
                 .bodyTitle(dto.getBodyTitle())
                 .bodySubtitle(dto.getBodySubtitle())
-                .build();
+                .knowledgeOnTech(dto.getKnowledgeOnTech());
+        Card card = builder.build();
         repository.save(card);
-        Section section = sectionRepository.findById(dto.getSectionId()).get();
-        card.setSection(section);
-        List<Card> cards = section.getCards();
-        cards.add(card);
-        section.setCards(cards);
-        sectionRepository.save(section);
+        Section section = card.getSection();
+        if(section != null) {
+            card.setSection(section);
+            List<Card> cards = section.getCards();
+            cards.add(card);
+            section.setCards(cards);
+            sectionRepository.save(section);
+        }
         HttpHeaders headers = new HttpHeaders();
 //        headers.setLocation(URI.create());
         return new ResponseEntity<>(new Message("Card successfully created!"), headers, HttpStatus.CREATED);
@@ -81,13 +86,14 @@ public class CardController {
                                 .headerSubtitle(dto.getHeaderSubtitle())
                                 .bodyTitle(dto.getBodyTitle())
                                 .bodySubtitle(dto.getBodySubtitle())
+                                .section((dto.getSectionId() == null) ? null : sectionRepository.findById(dto.getSectionId()).orElse(null))
                                 .build()
                 )
                 .map(
                         card -> {
-                            if(dto.getSectionId() != null && sectionRepository.existsById(dto.getSectionId()))
+                            if(card.getSection() == null)
                                 return new ResponseEntity<>(new Message("Section with it id not found!"), HttpStatus.BAD_REQUEST);
-                            Section section = sectionRepository.findById(dto.getSectionId()).get();
+                            Section section = card.getSection();
                             List<Card> cards = section.getCards();
                             cards.removeIf(any -> any.getIdentifier().equals(card.getIdentifier()));
                             cards.add(card);

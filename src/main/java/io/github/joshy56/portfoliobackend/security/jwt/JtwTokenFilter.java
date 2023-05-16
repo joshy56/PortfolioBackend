@@ -45,24 +45,18 @@ public class JtwTokenFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = extractToken(request);
+
         try {
-            if (token != null && provider.validateToken(token)) {
-                String username = provider.getUsernameFromToken(token);
-                UserDetails user = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+            String token = extractToken(request);
+            String username = provider.getUsernameFromToken(token);
+            if(!provider.validateToken(token))
+                token = provider.refreshToken(new JwtDto(token));
+
+            UserDetails user = userDetailsService.loadUserByUsername(username);
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }catch (Exception e) {
-            try {
-                String freshToken = provider.refreshToken(new JwtDto(token, null));
-                String username = provider.getUsernameFromToken(freshToken);
-                UserDetails user = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (ParseException ex) {
-                logger.error("Something wrong with login", e);
-            }
+            logger.error("Something wrong with login", e);
         }
         filterChain.doFilter(request, response);
     }

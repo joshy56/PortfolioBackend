@@ -45,17 +45,21 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(generateSecret(secret))
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
+    public String getUsernameFromToken(String token) throws ParseException {
+        if (validateToken(token))
+            return Jwts.parserBuilder()
+                    .setSigningKey(generateSecret(secret))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        return JWTParser.parse(token)
+                .getJWTClaimsSet()
                 .getSubject();
     }
 
     public boolean validateToken(String token) {
-        try{
+        try {
             Jwts.parserBuilder()
                     .setSigningKey(generateSecret(secret))
                     .build()

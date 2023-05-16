@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,12 +49,14 @@ public class SectionController {
 
     @PostMapping("/create")
     public ResponseEntity<Message> create(@RequestBody SectionDto dto) {
+        Section.SectionBuilder builder = Section.builder();
+        if(dto.getCards() != null && !dto.getCards().isEmpty())
+            builder.cards(cardRepository.findAllById(dto.getCards()));
         Section section = Section.builder()
                 .title(dto.getTitle())
-                .cards(cardRepository.findAllById(dto.getCards()))
                 .build();
         if(dto.getCards() != null && !dto.getCards().isEmpty()) {
-            List<Card> cards = cardRepository.findAllById(dto.getCards());
+            List<Card> cards = section.getCards();
             cards.parallelStream().forEach(card -> card.setSection(section));
             section.setCards(cards);
         }
@@ -70,7 +73,7 @@ public class SectionController {
                         oldSection -> Section.builder()
                                 .identifier(oldSection.getIdentifier())
                                 .title(dto.getTitle())
-                                .cards(cardRepository.findAllById(dto.getCards()))
+                                .cards((dto.getCards() != null && !dto.getCards().isEmpty()) ? cardRepository.findAllById(dto.getCards()) : Collections.emptyList())
                                 .build()
                 )
                 .map(
