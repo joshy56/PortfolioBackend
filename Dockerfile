@@ -11,5 +11,6 @@
 #ENTRYPOINT ["java","-jar","app.jar"]
 FROM amazoncorretto:17-alpine-jdk
 VOLUME /tmp
+EXPOSE 8080
 COPY target/*.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
