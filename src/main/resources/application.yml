@@ -16,3 +16,5 @@ spring:
 jwt:
   secret: MTdiNjY2MTctODI3Ni00ZGM4LWIzMWUtZjI0NGFjMDcxOTJk
   expiration: 9000
+server:
+  port: 10000
