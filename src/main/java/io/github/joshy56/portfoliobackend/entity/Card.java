@@ -24,6 +24,4 @@ public class Card {
     private String headerSubtitle;
     private String bodyTitle;
     private String bodySubtitle;
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Section section;
 }

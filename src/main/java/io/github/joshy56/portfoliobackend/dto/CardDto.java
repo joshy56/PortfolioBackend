@@ -19,5 +19,4 @@ public class CardDto {
     private String headerSubtitle;
     private String bodyTitle;
     private String bodySubtitle;
-    private UUID sectionId;
 }

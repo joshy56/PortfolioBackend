@@ -1,22 +1,16 @@
 package io.github.joshy56.portfoliobackend.controller;
 
-import io.github.joshy56.portfoliobackend.dto.CardDto;
 import io.github.joshy56.portfoliobackend.dto.Message;
 import io.github.joshy56.portfoliobackend.dto.SectionDto;
-import io.github.joshy56.portfoliobackend.entity.Card;
 import io.github.joshy56.portfoliobackend.entity.Section;
 import io.github.joshy56.portfoliobackend.repository.CardRepository;
 import io.github.joshy56.portfoliobackend.repository.SectionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,17 +43,10 @@ public class SectionController {
 
     @PostMapping("/create")
     public ResponseEntity<Message> create(@RequestBody SectionDto dto) {
-        Section.SectionBuilder builder = Section.builder();
-        if(dto.getCards() != null && !dto.getCards().isEmpty())
-            builder.cards(cardRepository.findAllById(dto.getCards()));
         Section section = Section.builder()
                 .title(dto.getTitle())
+                .cards((dto.getCards() == null) ? null : cardRepository.findAllById(dto.getCards()))
                 .build();
-        if(dto.getCards() != null && !dto.getCards().isEmpty()) {
-            List<Card> cards = section.getCards();
-            cards.parallelStream().forEach(card -> card.setSection(section));
-            section.setCards(cards);
-        }
         repository.save(section);
         HttpHeaders headers = new HttpHeaders();
 //        headers.setLocation(URI.create(""));
@@ -73,12 +60,12 @@ public class SectionController {
                         oldSection -> Section.builder()
                                 .identifier(oldSection.getIdentifier())
                                 .title(dto.getTitle())
-                                .cards((dto.getCards() != null && !dto.getCards().isEmpty()) ? cardRepository.findAllById(dto.getCards()) : Collections.emptyList())
+                                .cards((dto.getCards() == null) ? null : cardRepository.findAllById(dto.getCards()))
                                 .build()
                 )
                 .map(
                         section -> {
-                            section.getCards().parallelStream().forEach(card -> card.setSection(section));
+                            repository.save(section);
                             return new ResponseEntity<>(new Message("Section successfully updated!"), HttpStatus.OK);
                         }
                 )
@@ -90,7 +77,6 @@ public class SectionController {
         return repository.findById(id)
                 .map(
                         section -> {
-                            section.getCards().parallelStream().forEach(card -> card.setSection(null));
                             repository.deleteById(id);
                             return new ResponseEntity<>(new Message("Section successfully deleted!"), HttpStatus.OK);
                         }

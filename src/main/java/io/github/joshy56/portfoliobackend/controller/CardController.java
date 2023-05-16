@@ -3,21 +3,14 @@ package io.github.joshy56.portfoliobackend.controller;
 import io.github.joshy56.portfoliobackend.dto.CardDto;
 import io.github.joshy56.portfoliobackend.dto.Message;
 import io.github.joshy56.portfoliobackend.entity.Card;
-import io.github.joshy56.portfoliobackend.entity.Section;
 import io.github.joshy56.portfoliobackend.repository.CardRepository;
 import io.github.joshy56.portfoliobackend.repository.SectionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,25 +43,15 @@ public class CardController {
 
     @PostMapping("/create")
     public ResponseEntity<Message> create(@RequestBody CardDto dto) {
-        Card.CardBuilder builder = Card.builder();
-        if(dto.getSectionId() != null && sectionRepository.existsById(dto.getSectionId()))
-            builder.section(sectionRepository.findById(dto.getSectionId()).get());
-        builder.avatarHeaderImage(dto.getAvatarHeaderImage())
+        Card card = Card.builder()
+                .avatarHeaderImage(dto.getAvatarHeaderImage())
                 .headerTitle(dto.getHeaderTitle())
                 .headerSubtitle(dto.getHeaderSubtitle())
                 .bodyTitle(dto.getBodyTitle())
                 .bodySubtitle(dto.getBodySubtitle())
-                .knowledgeOnTech(dto.getKnowledgeOnTech());
-        Card card = builder.build();
+                .knowledgeOnTech(dto.getKnowledgeOnTech())
+                .build();
         repository.save(card);
-        Section section = card.getSection();
-        if(section != null) {
-            card.setSection(section);
-            List<Card> cards = section.getCards();
-            cards.add(card);
-            section.setCards(cards);
-            sectionRepository.save(section);
-        }
         HttpHeaders headers = new HttpHeaders();
 //        headers.setLocation(URI.create());
         return new ResponseEntity<>(new Message("Card successfully created!"), headers, HttpStatus.CREATED);
@@ -86,20 +69,10 @@ public class CardController {
                                 .headerSubtitle(dto.getHeaderSubtitle())
                                 .bodyTitle(dto.getBodyTitle())
                                 .bodySubtitle(dto.getBodySubtitle())
-                                .section((dto.getSectionId() == null) ? null : sectionRepository.findById(dto.getSectionId()).orElse(null))
                                 .build()
                 )
                 .map(
                         card -> {
-                            if(card.getSection() == null)
-                                return new ResponseEntity<>(new Message("Section with it id not found!"), HttpStatus.BAD_REQUEST);
-                            Section section = card.getSection();
-                            List<Card> cards = section.getCards();
-                            cards.removeIf(any -> any.getIdentifier().equals(card.getIdentifier()));
-                            cards.add(card);
-                            section.setCards(cards);
-                            sectionRepository.save(section);
-                            card.setSection(section);
                             repository.save(card);
                             return new ResponseEntity<>(new Message("Card successfully updated!"), HttpStatus.OK);
                         }
@@ -113,11 +86,6 @@ public class CardController {
                 .map(
                         card -> {
                             repository.deleteById(id);
-                            Section section = card.getSection();
-                            if(section != null)
-                                section.getCards().removeIf(any -> card.getIdentifier().equals(card.getIdentifier()));
-                            if(sectionRepository.existsById(section.getIdentifier()))
-                                sectionRepository.save(section);
                             return new ResponseEntity<>(new Message("Card successfully deleted!"), HttpStatus.OK);
                         }
                 )
